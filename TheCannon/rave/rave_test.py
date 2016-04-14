@@ -38,7 +38,7 @@ spec = np.array([row[12] for row in data])
 lambdas = data[0][14]
 c = 'rgbkc'
 
-N = 10
+N = 140
 npix = len(data[0][14])
 
 dataall = np.zeros((npix, N, 3))
@@ -47,7 +47,7 @@ result_apo = np.zeros((N, 3))
 for irow, row in enumerate(data[:N]):
     dataall[:, irow, 0] = row[14]
     dataall[:, irow, 1] = row[12]
-    dataall[:, irow, 2] = (row[2] / row[12])**2
+    dataall[:, irow, 2] = 1./(row[2] / row[12])**2
     result[irow, 0] = row[3]
     result[irow, 1] = row[5]
     result[irow, 2] = row[7]

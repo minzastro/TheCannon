@@ -178,7 +178,7 @@ def get_goodness_fit(fn_pickle, filein, Params_all, MCM_rotate_all):
     with open(fn_pickle, 'r') as fd:
         dataall, metaall, labels, offsets, coeffs, covs, \
             scatters, chis, chisq = pickle.load(fd)
-    file_with_star_data = str(filein)+".pickle"
+    file_with_star_data = filein
     file_normed = normed_training_data.split('.pickle')
     if filein != file_normed:
         f_flux = open(file_with_star_data, 'r')
@@ -234,7 +234,7 @@ def savefig2(fig, prefix, **kwargs):
 ## non linear stuff below ##
 # returns the non linear function
 def func(coeff, a, b, c):
-    return np.sum(coeff * np.outer([1., a, b, c], [1., a, b, c]))
+    return np.sum(np.dot(coeff, np.outer([1., a, b, c], [1., a, b, c])), axis=(1,2))
 
 
 # thankyou stack overflow for the example below on how to use the optimse function
@@ -261,7 +261,8 @@ def infer_labels_nonlinear(fn_pickle, testdata, fout_pickle,
         scatters, chis, chisq = pickle.load(file_in)
     file_in.close()
     nstars = (testdata.shape)[1]
-    nlabels = labels.shape[1] - 1
+    nlabels = offsets.shape[0]
+    import ipdb; ipdb.set_trace()
     Params_all = np.zeros((nstars, nlabels))
     MCM_rotate_all = np.zeros((nstars, np.shape(coeffs)[1]-1,
                                np.shape(coeffs)[1]-1.))
@@ -270,17 +271,16 @@ def infer_labels_nonlinear(fn_pickle, testdata, fout_pickle,
         if np.any(abs(testdata[:, jj, 0] - dataall[:, 0, 0]) > 0.0001):
             print testdata[range(5), jj, 0], dataall[range(5), 0, 0]
             assert False
-        #xdata = testdata[:, jj, 0]
         ydata = testdata[:, jj, 1]
         ysigma = testdata[:, jj, 2]
-        #t,g,feh = metaall[:, 0:3]
         coeff = np.zeros((coeffs.shape[0], 4, 4))
         for icoe, coe in enumerate(coeffs):
             coeff[icoe][np.triu_indices(4)] = coe
-            coeff[icoe][np.tril_indices(4)] = coe
+            #coeff[icoe] = coeff[icoe] + coeff[icoe].T
+            #coeff[icoe][np.diag_indices(4)] = coeff[icoe][np.diag_indices(4)]*0.5
         Cinv = 1. / (ysigma ** 2 + scatters ** 2)
         Params, covs = nonlinear_invert(ydata, coeff, 1/Cinv**0.5)
-        Params = Params+offsets
+        Params = Params + offsets
         coeffs_slice = coeffs[:, -9:]
         MCM_rotate = np.dot(coeffs_slice.T, Cinv[:, None] * coeffs_slice)
         Params_all[jj, :] = Params
@@ -292,9 +292,9 @@ def infer_labels_nonlinear(fn_pickle, testdata, fout_pickle,
         file_normed = normed_training_data.split('.pickle')[0]
         chi2 = get_goodness_fit(fn_pickle, file_normed,
                                 Params_all, MCM_rotate_all)
-    else:
-        chi2 = get_goodness_fit(fn_pickle, filein, Params_all, MCM_rotate_all)
-    chi2_def = chi2
+    #else:
+    #    chi2 = get_goodness_fit(fn_pickle, filein, Params_all, MCM_rotate_all)
+    chi2_def = None #chi2
     pickle.dump((Params_all, covs_all, chi2_def), file_in)
     file_in.close()
     return Params_all, MCM_rotate_all

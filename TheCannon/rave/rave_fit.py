@@ -7,14 +7,11 @@ Created on Fri Apr  1 14:11:21 2016
 """
 from astropy.io import fits
 import numpy as np
-import cPickle as pickle
 from TheCannon.code.rave.fitspectra_rave import train
 import pylab as plt
 
-#data = pickle.load(open('RAVE_APOGEE_GCS.pickle', 'r'))
 full_data = fits.open('RAVE_ready.fits')
 data = full_data[1].data
-#apogee_data = fits.open('Highres_data.fits')[1].data
 
 """
 #0 rave_id
@@ -54,7 +51,7 @@ Ametaall[:, 2] = data['param_m_h']
 for irow, row in enumerate(data):
     dataall[:, irow, 0] = lambdas
     dataall[:, irow, 1] = spec[irow]
-    dataall[:, irow, 2] = (row[2] / spec[irow])**2
+    dataall[:, irow, 2] = 1./(row[2] / spec[irow])**2
 
 for i in xrange(3):
     plt.plot(metaall[:, i], Ametaall[:, i] - metaall[:, i], '.')
@@ -67,5 +64,6 @@ for i in xrange(3):
 
 train(dataall, metaall, 1, 'order_1.pickle', Ametaall,
       'Noname')
+import ipdb; ipdb.set_trace()
 train(dataall, metaall, 2, 'order_2.pickle', Ametaall,
       'Noname')
